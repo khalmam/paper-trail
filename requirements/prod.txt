@@ -1,0 +1,2 @@
+-r base.txt
+django-storages[s3]>=1.14
