@@ -35,7 +35,7 @@ Not built yet: remaining tools, rules engine, Bedrock parsing, letters, evidence
 
 ## What is real and what is simulated
 
-Alexa+ access path: **TBD** (to be confirmed against the official Resources page). If the demo uses a simulated Alexa+ experience, the simulator source will be in this repo and every simulated part will be labeled here.
+Alexa+ path: **self-hosted MCP server plus a simulated Alexa+ client.** The server in this repo is real: a Streamable HTTP MCP server on spec 2025-11-25, built with the MCP Python SDK. The demo drives it through a **simulated** Alexa+ web chat client (source in this repo, labeled as simulated in the UI and in the video). No Alexa device or Alexa+ service is used.
 
 ## Architecture
 
