@@ -8,7 +8,7 @@ pytestmark = pytest.mark.django_db
 
 def test_verify_ok_and_empty(hh, chain):
     r = verify_chain(hh)
-    assert r.ok and r.checked == 4 and r.head_hash == chain[-1].hash
+    assert r.ok and r.verified == 4 and r.head_hash == chain[-1].hash
     assert verify_chain(Household.objects.create(name="empty")).ok
 
 

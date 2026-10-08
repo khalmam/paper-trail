@@ -29,7 +29,7 @@ def compute_hash(**fields) -> str:
 @dataclass(frozen=True)
 class VerifyResult:
     ok: bool
-    checked: int
+    verified: int
     head_hash: str
     bad_seq: int | None = None
     reason: str | None = None

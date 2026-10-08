@@ -11,3 +11,12 @@ run:
 
 test:
 	pytest -q
+
+seed:
+	python manage.py seed_demo
+
+tamper:
+	python manage.py tamper_demo --seq 1
+
+verify:
+	python manage.py verify_ledger

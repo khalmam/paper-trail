@@ -8,7 +8,7 @@ from ledger.domain.chain import GENESIS_HASH, compute_hash
 from ledger.models import Entry, Household
 
 
-def append_entry(*, household: Household, author: str, kind: str, payload: dict, issue_id=None) -> Entry:
+def append_entry(*, household: Household, author: str, kind: str, payload: dict, issue_id=None, at=None) -> Entry:
     """Sync on purpose: atomic() + select_for_update() are not async-safe.
     Async callers go through mcp_server.runner.run_db."""
     payload = json.loads(json.dumps(payload))  # force JSON-clean before hashing
@@ -19,7 +19,7 @@ def append_entry(*, household: Household, author: str, kind: str, payload: dict,
         seq = last.seq + 1 if last else 1
         prev_hash = last.hash if last else GENESIS_HASH
         issue_id = issue_id or uuid.uuid4()
-        created_at = timezone.now()
+        created_at = at or timezone.now()  # `at` is for seeding only
         digest = compute_hash(
             household_id=household.pk, seq=seq, issue_id=issue_id, kind=kind,
             author=author, payload=payload, created_at=created_at, prev_hash=prev_hash,

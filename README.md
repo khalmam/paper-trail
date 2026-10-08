@@ -22,13 +22,15 @@ Rules decide all of the above. The LLM (Amazon Bedrock) only parses speech into 
 <!-- STATUS:START -->
 Built and verified:
 
-- Append-only hash-chain ledger (per-household sequence, unique constraint, row lock on append, ORM and Postgres-trigger protection)
+- Append-only hash-chain ledger (per-household sequence, unique constraint, row lock, ORM and Postgres-trigger protection)
 - `verify_chain` names the exact altered, missing or re-linked entry
 - MCP server over Streamable HTTP at `/mcp` (protocol 2025-11-25, MCP Python SDK 1.30.x, stateless)
-- MCP tool: `log_issue`
-- 8 tests passing
+- MCP tools: `log_issue`, `add_update`, `verify_integrity`
+- Members with hashed bearer tokens; every write returns the chain head (the anchor)
+- Demo tooling: `make seed`, `make tamper`, `make verify`
+- Architecture test enforcing layer boundaries and the 200-line file limit
 
-Not built yet: other tools, rules engine, Bedrock parsing, letters, evidence packet, share links, simulator, deploy.
+Not built yet: remaining tools, rules engine, Bedrock parsing, letters, evidence packet, share links, simulator, deploy.
 <!-- STATUS:END -->
 
 ## What is real and what is simulated

@@ -5,6 +5,8 @@ from ledger.services import log_issue as log_issue_service
 from mcp_server.identity import resolve_identity
 from mcp_server.runner import run_db
 
+from ._common import entry_response
+
 
 def register(mcp: FastMCP) -> None:
     @mcp.tool()
@@ -14,15 +16,9 @@ def register(mcp: FastMCP) -> None:
         evidence log. Use it when the user reports something wrong. room is where it is,
         like bedroom or kitchen. happened_on is an ISO date; leave it empty for today.
         Not legal advice."""
-        who = resolve_identity()
+        who = await resolve_identity()
         entry = await run_db(
-            log_issue_service, household_name=who.household_name, author=who.author,
+            log_issue_service, household=who.household, author=who.author,
             room=room, category=category, description=description, happened_on=happened_on,
         )
-        receipt = entry.hash[:8]
-        return {
-            "entry_number": entry.seq,
-            "issue_id": str(entry.issue_id),
-            "receipt": receipt,
-            "speech": f"Logged. That's entry {entry.seq} in your evidence log, receipt {' '.join(receipt[:4])}.",
-        }
+        return entry_response(entry, f"Logged. That's entry {entry.seq} in your evidence log.")
