@@ -51,6 +51,9 @@ def _summarize(opener: EntryView, group: list[EntryView], today: date) -> IssueS
         deadline_what=deadline.payload.get("what") if deadline else None,
         days_until_deadline=days_left,
         overdue=(not resolved) and days_left is not None and days_left < 0,
+        photo_refs=sum(1 for e in group if e.payload.get("photo_ref")),
+        witnesses=sum(1 for e in group if e.payload.get("witness")),
+        letters_sent=sum(1 for e in group if e.kind == kinds.LETTER_SENT),
     )
 
 

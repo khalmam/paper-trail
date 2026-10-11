@@ -75,3 +75,14 @@ def test_urgency_order():
     ]
     ordered = sorted(summarize_issues(entries, TODAY), key=urgency_key)
     assert [s.issue_id for s in ordered] == ["late", "soon", "none"]
+
+
+def test_photo_witness_and_letter_counts():
+    entries = [
+        opener(1, "A"),
+        entry(2, kinds.UPDATE, "A", note="x", photo_ref="stain photo", witness="Amina"),
+        entry(3, kinds.UPDATE, "A", note="y"),
+        entry(4, kinds.LETTER_SENT, "A"),
+    ]
+    [s] = summarize_issues(entries, TODAY)
+    assert (s.photo_refs, s.witnesses, s.letters_sent) == (1, 1, 1)

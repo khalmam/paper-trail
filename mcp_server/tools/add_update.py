@@ -9,13 +9,17 @@ from ._common import entry_response
 
 def register(mcp: FastMCP) -> None:
     @mcp.tool()
-    async def add_update(note: str, room: str | None = None) -> dict:
+    async def add_update(note: str, room: str | None = None, photo_ref: str | None = None,
+                         witness: str | None = None) -> dict:
         """Add a new detail to a problem that was already logged, like it got worse or the
         landlord replied. Use it when the user says more about an existing issue. room says
-        which problem, like bedroom; leave it empty for the most recent one. Not legal advice."""
+        which problem, like bedroom; leave it empty for the most recent one. photo_ref is a
+        short note saying where a photo is, like photo of the stain on my phone; never ask for
+        the photo itself. witness is the name of a person who saw the problem. Not legal advice."""
         who = await resolve_identity()
         entry = await run_db(
-            add_update_service, household=who.household, author=who.author, note=note, room=room,
+            add_update_service, household=who.household, author=who.author, note=note,
+            room=room, photo_ref=photo_ref, witness=witness,
         )
         where = entry.payload.get("room") or "latest"
         return entry_response(entry, f"Added to your {where} issue as entry {entry.seq}.")

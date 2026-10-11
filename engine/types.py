@@ -29,6 +29,9 @@ class IssueSummary:
     deadline_what: str | None
     days_until_deadline: int | None  # negative means overdue
     overdue: bool
+    photo_refs: int = 0
+    witnesses: int = 0
+    letters_sent: int = 0
 
     def to_dict(self) -> dict:
         return {k: (v.isoformat() if isinstance(v, date) else v) for k, v in asdict(self).items()}

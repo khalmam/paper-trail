@@ -4,6 +4,8 @@ from datetime import date
 from django.conf import settings
 from django.utils import timezone
 
+from engine.completeness import Completeness, score_completeness
+from engine.escalation import Step, next_step
 from engine.recurrence import Recurrence, detect_recurrence
 from engine.summary import summarize_issues, urgency_key
 from engine.types import EntryView, IssueSummary
@@ -11,9 +13,21 @@ from ledger.models import Entry, Household
 
 
 @dataclass(frozen=True)
+class Guidance:
+    issue_id: str
+    completeness: Completeness
+    step: Step
+
+    def to_dict(self) -> dict:
+        return {"issue_id": self.issue_id, "completeness": self.completeness.to_dict(),
+                "next_step": self.step.to_dict()}
+
+
+@dataclass(frozen=True)
 class Overview:
     open: list[IssueSummary]            # unresolved issues, most urgent first
     recurrences: list[Recurrence]       # repeated room+category problems in the window
+    guidance: dict[str, Guidance]       # issue_id -> completeness and next step (open issues)
 
 
 def overview(household: Household, today: date | None = None) -> Overview:
@@ -25,9 +39,11 @@ def overview(household: Household, today: date | None = None) -> Overview:
         for e in Entry.objects.filter(household=household).order_by("seq").iterator()
     ]
     summaries = summarize_issues(views, today)
+    open_ones = sorted((s for s in summaries if s.status == "open"), key=urgency_key)
     return Overview(
-        open=sorted((s for s in summaries if s.status == "open"), key=urgency_key),
+        open=open_ones,
         recurrences=detect_recurrence(summaries, today, settings.RECURRENCE_WINDOW_DAYS),
+        guidance={s.issue_id: Guidance(s.issue_id, score_completeness(s), next_step(s)) for s in open_ones},
     )
 
 
