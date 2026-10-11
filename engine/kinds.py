@@ -1,0 +1,6 @@
+"""Entry kinds the engine understands. A contract test checks these against the ledger."""
+ISSUE_LOGGED = "issue_logged"
+UPDATE = "update"
+LANDLORD_CONTACT = "landlord_contact"
+DEADLINE_SET = "deadline_set"
+RESOLVED = "resolved"

@@ -15,6 +15,7 @@ class Entry(models.Model):
         LANDLORD_CONTACT = "landlord_contact"
         DEADLINE_SET = "deadline_set"
         LETTER_SENT = "letter_sent"
+        RESOLVED = "resolved"
         CORRECTION = "correction"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
