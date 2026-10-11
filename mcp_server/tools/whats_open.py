@@ -1,8 +1,10 @@
 from mcp.server.fastmcp import FastMCP
 
-from ledger.services import open_issues
+from ledger.services import overview
 from mcp_server.identity import resolve_identity
 from mcp_server.runner import run_db
+
+NUMBER_WORDS = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
 
 
 def _days(n: int) -> str:
@@ -21,17 +23,33 @@ def _headline(top) -> str:
     return text + f", due in {_days(d)}."
 
 
+def _repeat_sentence(top, recurrences) -> str:
+    rec = next((r for r in recurrences if r.room == top.room and r.category == top.category), None)
+    if rec is None:
+        return ""
+    times = NUMBER_WORDS.get(rec.count, str(rec.count))
+    return f" This kind of problem has happened {times} times in the {rec.room} in the last {rec.window_days} days."
+
+
 def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def whats_open() -> dict:
         """List the problems in the user's home that have not been fixed yet, most urgent first,
-        with how many times the landlord was contacted and any deadline. Use it when the user
-        asks what is still open, outstanding, or overdue. Not legal advice."""
+        with how many times the landlord was contacted, any deadline, and whether the same kind
+        of problem keeps coming back. Use it when the user asks what is still open, outstanding,
+        or overdue. Not legal advice."""
         who = await resolve_identity()
-        items = await run_db(open_issues, who.household)
+        result = await run_db(overview, who.household)
+        items = result.open
         if not items:
             speech = "You have no open issues."
         else:
             n = len(items)
             speech = f"You have {n} open issue{'s' if n != 1 else ''}. " + _headline(items[0])
-        return {"count": len(items), "issues": [i.to_dict() for i in items], "speech": speech}
+            speech += _repeat_sentence(items[0], result.recurrences)
+        return {
+            "count": len(items),
+            "issues": [i.to_dict() for i in items],
+            "recurrences": [r.to_dict() for r in result.recurrences],
+            "speech": speech,
+        }

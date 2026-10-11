@@ -38,3 +38,6 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": env.get("LOG_LEVEL", "INFO")},
 }
+
+# Rolling window for recurrence detection ("third leak in 90 days").
+RECURRENCE_WINDOW_DAYS = int(env.get("RECURRENCE_WINDOW_DAYS", "90"))
