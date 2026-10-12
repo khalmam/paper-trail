@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from datetime import date
 
 from . import kinds
+from .corrections import apply_corrections
 from .types import EntryView, IssueSummary
 
 
@@ -15,7 +16,7 @@ def _as_date(value, fallback: date) -> date:
 def summarize_issues(entries: Iterable[EntryView], today: date) -> list[IssueSummary]:
     """One summary per logged issue, in the order the issues were logged."""
     groups: dict[str, list[EntryView]] = {}
-    for e in sorted(entries, key=lambda e: e.seq):
+    for e in apply_corrections(entries):
         groups.setdefault(e.issue_id, []).append(e)
     summaries = []
     for group in groups.values():

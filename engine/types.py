@@ -11,6 +11,7 @@ class EntryView:
     author: str
     created_at: datetime
     payload: dict
+    corrected: bool = False
 
 
 @dataclass(frozen=True)

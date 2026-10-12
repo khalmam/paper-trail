@@ -4,3 +4,7 @@ class ImmutableEntryError(Exception):
 
 class NoSuchIssue(ValueError):
     """No logged issue matches the request."""
+
+
+class NoSuchEntry(ValueError):
+    """No entry with that number exists in this household."""

@@ -2,7 +2,7 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGES = ["config", "ledger", "mcp_server", "engine", "api"]
+PACKAGES = ["config", "ledger", "mcp_server", "engine", "ai", "api"]
 
 
 def test_every_package_folder_has_init():

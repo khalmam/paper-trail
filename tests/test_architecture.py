@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-SCAN = ["config", "ledger", "mcp_server", "engine", "api", "scripts"]
+SCAN = ["config", "ledger", "mcp_server", "engine", "ai", "api", "scripts"]
 MAX_LINES = 200
 FORBIDDEN = {
     "ledger/domain": ["django", "mcp", "mcp_server", "engine", "api", "ledger.models", "ledger.services"],
@@ -13,6 +13,7 @@ FORBIDDEN = {
     "ledger/models": ["mcp", "mcp_server", "api", "engine", "ledger.services"],
     "ledger/services": ["mcp", "mcp_server", "api"],
     "mcp_server": ["ledger.models"],
+    "ai": ["django", "mcp", "mcp_server", "api", "ledger.models", "ledger.services", "engine"],
 }
 
 
