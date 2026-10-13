@@ -20,3 +20,8 @@ tamper:
 
 verify:
 	python manage.py verify_ledger
+
+doctor:
+	@docker info >/dev/null 2>&1 && echo 'docker: ok' || echo 'docker: DOWN (open Docker Desktop)'
+	@docker compose exec -T db pg_isready -U papertrail >/dev/null 2>&1 && echo 'postgres: ok' || echo 'postgres: DOWN (run: docker compose up -d)'
+	@python manage.py migrate --check >/dev/null 2>&1 && echo 'migrations: up to date' || echo 'migrations: PENDING or database unreachable'
