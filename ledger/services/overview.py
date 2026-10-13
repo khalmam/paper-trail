@@ -5,6 +5,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from engine.completeness import Completeness, score_completeness
+from engine.conflicts import Conflict, detect_conflicts
 from engine.escalation import Step, next_step
 from engine.recurrence import Recurrence, detect_recurrence
 from engine.summary import summarize_issues, urgency_key
@@ -27,6 +28,7 @@ class Guidance:
 class Overview:
     open: list[IssueSummary]            # unresolved issues, most urgent first
     recurrences: list[Recurrence]       # repeated room+category problems in the window
+    conflicts: list[Conflict]           # places where roommates' records disagree
     guidance: dict[str, Guidance]       # issue_id -> completeness and next step (open issues)
 
 
@@ -43,6 +45,7 @@ def overview(household: Household, today: date | None = None) -> Overview:
     return Overview(
         open=open_ones,
         recurrences=detect_recurrence(summaries, today, settings.RECURRENCE_WINDOW_DAYS),
+        conflicts=detect_conflicts(views),
         guidance={s.issue_id: Guidance(s.issue_id, score_completeness(s), next_step(s)) for s in open_ones},
     )
 

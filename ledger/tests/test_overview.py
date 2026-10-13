@@ -27,3 +27,11 @@ def test_guidance_for_each_open_issue(hh):
     result = overview_for(hh)
     [g] = result.guidance.values()
     assert g.completeness.percent == 80 and g.step.action == "set_deadline"
+
+
+def test_conflicts_surface_in_overview(hh):
+    log_issue(household=hh, author="Ibrahim", room="Bedroom", category="leak", description="drip")
+    set_deadline(household=hh, author="Ibrahim", deadline="2026-10-10", what="fix", room="bedroom")
+    set_deadline(household=hh, author="Amina", deadline="2026-10-15", what="fix", room="bedroom")
+    [c] = overview_for(hh, today=date(2026, 10, 11)).conflicts
+    assert c.kind == "deadline_differs"

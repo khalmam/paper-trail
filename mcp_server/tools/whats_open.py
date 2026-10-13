@@ -47,6 +47,9 @@ def register(mcp: FastMCP) -> None:
             n = len(items)
             speech = f"You have {n} open issue{'s' if n != 1 else ''}. " + _headline(items[0])
             speech += _repeat_sentence(items[0], result.recurrences)
+            top_conflicts = [c for c in result.conflicts if c.issue_id == items[0].issue_id]
+            if top_conflicts:
+                speech += " " + top_conflicts[0].message
             g = result.guidance[items[0].issue_id]
             speech += " " + g.step.message
             skip = ("landlord_contact",) if g.step.action == "contact_landlord" else ()
@@ -57,6 +60,7 @@ def register(mcp: FastMCP) -> None:
             "count": len(items),
             "issues": [i.to_dict() for i in items],
             "recurrences": [r.to_dict() for r in result.recurrences],
+            "conflicts": [c.to_dict() for c in result.conflicts],
             "guidance": [result.guidance[i.issue_id].to_dict() for i in items],
             "speech": speech,
         }
