@@ -1,7 +1,11 @@
 .venv/
 __pycache__/
 *.pyc
-.env
+temp_auto_push.bat
 media/
 .pytest_cache/
 out/
+.gitignore
+branch_structure.json
+config.bat
+node_modules
