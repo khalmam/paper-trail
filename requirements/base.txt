@@ -5,3 +5,4 @@ dj-database-url>=2.2
 python-dotenv>=1.0
 mcp>=1.23,<2
 uvicorn>=0.30
+boto3>=1.35
