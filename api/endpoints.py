@@ -4,7 +4,9 @@ from datetime import date
 
 import httpx
 from django.conf import settings
+from django.http import HttpResponse
 from ninja import NinjaAPI, Schema
+from render.packet_html import render_packet
 
 from ai.factory import make_parser
 from ai.guards import CallBudget
@@ -37,3 +39,20 @@ async def chat(request, body: ChatIn):
         return api.create_response(
             request, {"speech": str(exc), "tool": action.tool, "data": None, "pending": None}, status=502)
     return {"speech": data.get("speech") or "Done.", "tool": action.tool, "data": data, "pending": None}
+
+
+class PacketIn(Schema):
+    token: str
+    room: str | None = None
+
+
+@api.post("/packet")
+async def packet(request, body: PacketIn):
+    """The printable evidence packet as one HTML page. The token travels in the body, never the URL."""
+    url = getattr(settings, "MCP_URL", "http://127.0.0.1:8000/mcp")
+    arguments = {"room": body.room} if body.room else {}
+    try:
+        data = await asyncio.to_thread(call_tool, _client, url, body.token, "evidence_packet", arguments)
+    except ToolError as exc:
+        return HttpResponse(str(exc), status=502, content_type="text/plain; charset=utf-8")
+    return HttpResponse(render_packet(data), content_type="text/html; charset=utf-8")

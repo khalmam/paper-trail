@@ -57,7 +57,24 @@ async function send(text){
       s.textContent='Details ('+b.tool+')';pre.textContent=JSON.stringify(b.data,null,2);
       det.appendChild(s);det.appendChild(pre);extra=det;
     }
-    add('bot',b.speech||'Done.',extra);speak(b.speech||'Done.');
+    add('bot',b.speech||'Done.',extra);speak(b.speech||'Done.');if(b.tool==='evidence_packet')showPacket();
+  }catch(e){add('bot','Could not reach the server.')}
+}
+let packetHtml=null;
+async function showPacket(){
+  try{
+    const r=await fetch('/api/packet',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:tok.value.trim()})});
+    if(!r.ok){add('bot','I could not build the packet.');return}
+    packetHtml=await r.text();
+    const f=document.createElement('iframe');
+    f.setAttribute('sandbox','');
+    f.style.cssText='width:100%;height:480px;border:1px solid var(--line);border-radius:8px;background:#fff';
+    f.srcdoc=packetHtml;
+    const b=document.createElement('button');b.type='button';b.textContent='Open printable page';
+    b.onclick=function(){window.open(URL.createObjectURL(new Blob([packetHtml],{type:'text/html'})),'_blank')};
+    const wrap=document.createElement('div');wrap.appendChild(f);wrap.appendChild(b);
+    add('bot','Here is your packet.',wrap);
   }catch(e){add('bot','Could not reach the server.')}
 }
 document.getElementById('f').addEventListener('submit',function(e){
