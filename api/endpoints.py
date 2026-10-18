@@ -6,7 +6,7 @@ import httpx
 from django.conf import settings
 from ninja import NinjaAPI, Schema
 
-from ai.fake import FakeParser
+from ai.factory import make_parser
 from ai.guards import CallBudget
 
 from .chat_core import route
@@ -15,7 +15,7 @@ from .mcp_client import ToolError, call_tool
 api = NinjaAPI(urls_namespace="chat-api", docs_url=None)  # no public docs page
 
 _budget = CallBudget(getattr(settings, "AI_DAILY_CALL_LIMIT", 100))
-_parser = FakeParser()  # swapped for the Bedrock parser later; same interface
+_parser = make_parser()  # offline by default; PAPER_TRAIL_PARSER=bedrock turns on Bedrock
 _client = httpx.Client(timeout=20)
 
 
