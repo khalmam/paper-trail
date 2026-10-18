@@ -26,7 +26,7 @@ def test_complete_report_calls_log_issue_with_the_token(client, monkeypatch):
 def test_missing_detail_asks_a_question_and_calls_no_tool(client, monkeypatch):
     monkeypatch.setattr(endpoints, "call_tool", lambda *a: (_ for _ in ()).throw(AssertionError("no tool call")))
     body = post(client, message="something is dripping", token="tok").json()
-    assert "room" in body["speech"].lower() and body["pending"] == {"utterance": "something is dripping"}
+    assert "room" in body["speech"].lower() and body["pending"] == {"utterance": "something is dripping", "asked": "room"}
 
 
 def test_record_questions_route_to_their_tool(client, monkeypatch):

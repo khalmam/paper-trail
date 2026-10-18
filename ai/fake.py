@@ -7,7 +7,7 @@ from .interface import ParsedIssue
 CATEGORY_PATTERNS = {
     "leak": r"\b(leak|drip|flood)\w*|water (is )?coming",
     "mold": r"\b(mou?ld|damp)\w*",
-    "heating": r"\b(heater|heating|radiator|boiler)\b|no heat",
+    "heating": r"\b(heater|heating|radiator|boiler|ac|air.?condition\w*)\b|no heat|not cooling",
     "pests": r"\b(ants?|mice|mouse|rats?|roach(es)?|cockroach(es)?|bed ?bugs?)\b",
     "electrical": r"\b(socket|wiring|sparks?)\b|power (outage|cut)|no power",
     "structural": r"\b(cracks?|cracked|collapse\w*|sagging)\b",

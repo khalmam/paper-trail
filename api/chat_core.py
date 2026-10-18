@@ -1,11 +1,11 @@
 """Decides what a chat message means. Pure Python: rules route, the parser only reads problem reports."""
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 
 from ai.guards import BudgetExceeded, CallBudget, call_with_retries
 from ai.interface import IssueParser
-from ai.validate import parse_checked
+from ai.validate import CATEGORIES, enforce_vocab, parse_checked
 
 MAX_CHARS = 500  # caps what one message can cost
 
@@ -42,11 +42,29 @@ def route(message: str, today: date, parser: IssueParser, budget: CallBudget,
         return Action(None, {}, f"{exc} Everything else still works.")
     except Exception:
         return Action(None, {}, "I couldn't work that out. Could you say it another way?", pending)
+    parsed = _apply_answer(parsed, pending, text, today)
     if not parsed.complete:
-        return Action(None, {}, parsed.question, {"utterance": utterance})
+        asked = "room" if parsed.room is None else "category"
+        return Action(None, {}, parsed.question, {"utterance": utterance, "asked": asked})
 
     args = {"room": parsed.room, "category": parsed.category,
             "description": parsed.description or text}
     if parsed.happened_on:
         args["happened_on"] = parsed.happened_on
     return Action("log_issue", args)
+
+
+LEAD_IN = re.compile(r"^(it'?s |it is |in |the |my )+")
+
+
+def _apply_answer(parsed, pending, text, today):
+    """The user just answered our question. Take a short reply as the answer even if the parser can't read it."""
+    asked = (pending or {}).get("asked")
+    if asked == "room" and parsed.room is None and len(text) <= 40:
+        room = LEAD_IN.sub("", text.lower().strip(" .!?")) or None
+        return enforce_vocab(replace(parsed, room=room), today)
+    if asked == "category" and parsed.category is None:
+        word = next((c for c in CATEGORIES if c in text.lower()), None)
+        if word:
+            return enforce_vocab(replace(parsed, category=word), today)
+    return parsed

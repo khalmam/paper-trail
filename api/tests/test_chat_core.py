@@ -39,7 +39,7 @@ def test_complete_report_becomes_a_log_issue_call():
 def test_missing_room_asks_and_remembers_the_sentence():
     action = go("something is dripping", Stub(room=None))
     assert action.tool is None and "room" in action.reply.lower()
-    assert action.pending == {"utterance": "something is dripping"}
+    assert action.pending == {"utterance": "something is dripping", "asked": "room"}
 
 
 def test_follow_up_is_parsed_together_with_the_first_message():
@@ -59,3 +59,15 @@ def test_daily_limit_blocks_the_parser_and_says_so():
 def test_empty_message_and_long_message():
     assert "Tell me" in go("   ").reply
     assert len(go("leak " * 500).arguments["description"]) <= MAX_CHARS
+
+
+def test_a_short_reply_to_the_room_question_is_taken_as_the_room():
+    pending = {"utterance": "the air condition is not working", "asked": "room"}
+    action = go("in my room 2", Stub(room=None), pending=pending)
+    assert action.tool == "log_issue" and action.arguments["room"] == "room 2"
+
+
+def test_a_reply_naming_a_category_answers_the_category_question():
+    pending = {"utterance": "the socket is humming", "asked": "category"}
+    action = go("electrical", Stub(room="kitchen", category=None), pending=pending)
+    assert action.tool == "log_issue" and action.arguments["category"] == "electrical"
