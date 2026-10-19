@@ -12,9 +12,19 @@ from ledger.services import append_entry, create_member, get_or_create_household
 class Command(BaseCommand):
     help = "DEV ONLY: wipe everything and load a fake household with backdated entries."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--allow-wipe-demo-server", action="store_true",
+            help="Permit this wipe with DEBUG off. Only for the public demo server.")
+
     def handle(self, *args, **options):
         if not settings.DEBUG:
-            raise CommandError("seed_demo only runs with DEBUG on")
+            if not options["allow_wipe_demo_server"]:
+                raise CommandError("seed_demo only runs with DEBUG on (or with --allow-wipe-demo-server)")
+            from ledger.models import Household
+            others = Household.objects.exclude(name=DEMO_HOUSEHOLD).count()
+            if others:
+                raise CommandError(f"Refusing to wipe: {others} household(s) other than the demo exist.")
         with connection.cursor() as c:  # TRUNCATE is not blocked by the row-level trigger
             c.execute("TRUNCATE ledger_entry, ledger_member, ledger_household RESTART IDENTITY CASCADE")
         now = timezone.now()
