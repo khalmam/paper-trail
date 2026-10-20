@@ -1,4 +1,6 @@
-from datetime import date
+import re
+from dataclasses import replace
+from datetime import date, timedelta
 
 from ledger.domain.vocab import CATEGORIES, CONTACT_METHODS
 
@@ -44,5 +46,21 @@ def enforce_vocab(raw: ParsedIssue, today: date) -> ParsedIssue:
     )
 
 
+WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+
+
+def weekday_date(utterance: str, today: date) -> str | None:
+    """If the sentence names a weekday, the next one (never today) is computed here, not by the model."""
+    found = [d for d in WEEKDAYS if re.search(rf"\b{d}\b", utterance.lower())]
+    if len(found) != 1:
+        return None
+    ahead = (WEEKDAYS.index(found[0]) - today.weekday()) % 7 or 7
+    return (today + timedelta(days=ahead)).isoformat()
+
+
 def parse_checked(parser: IssueParser, utterance: str, today: date) -> ParsedIssue:
-    return enforce_vocab(parser.parse_issue(utterance, today), today)
+    raw = parser.parse_issue(utterance, today)
+    named = weekday_date(utterance, today)
+    if named and raw.deadline_on:
+        raw = replace(raw, deadline_on=named)  # code, not the model, does the date arithmetic
+    return enforce_vocab(raw, today)
