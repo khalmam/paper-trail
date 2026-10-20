@@ -71,3 +71,20 @@ def test_a_reply_naming_a_category_answers_the_category_question():
     pending = {"utterance": "the socket is humming", "asked": "category"}
     action = go("electrical", Stub(room="kitchen", category=None), pending=pending)
     assert action.tool == "log_issue" and action.arguments["category"] == "electrical"
+
+
+class Multi:
+    def parse_issue(self, utterance, today):
+        return ParsedIssue("bedroom", "leak", utterance, None, None, contact_method="text",
+                           contacted_on="2026-10-14", deadline_on="2026-10-23", deadline_what="fix the ceiling")
+
+
+def test_one_sentence_becomes_issue_then_contact_then_deadline():
+    action = go("leak again, I texted him yesterday and he promised Friday", Multi())
+    assert action.tool == "log_issue"
+    assert [name for name, _ in action.then] == ["record_landlord_contact", "set_deadline"]
+    assert action.then[0][1]["room"] == "bedroom" and action.then[1][1]["deadline"] == "2026-10-23"
+
+
+def test_a_plain_report_has_no_follow_up_calls():
+    assert go("leak in the bedroom").then == ()

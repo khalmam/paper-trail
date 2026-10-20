@@ -45,3 +45,30 @@ def test_tool_failure_is_a_502_with_a_readable_message(client, monkeypatch):
 
 def test_token_is_required(client):
     assert post(client, message="hello").status_code == 422
+
+
+def test_a_multi_fact_message_makes_the_calls_in_order(client, monkeypatch):
+    names = []
+
+    def fake(http, url, token, name, arguments):
+        names.append(name)
+        return {"speech": name}
+
+    monkeypatch.setattr(endpoints, "_parser", __import__("api.tests.test_chat_core", fromlist=["Multi"]).Multi())
+    monkeypatch.setattr(endpoints, "call_tool", fake)
+    body = post(client, message="leak again, texted him yesterday, he promised Friday", token="t").json()
+    assert names == ["log_issue", "record_landlord_contact", "set_deadline"]
+    assert body["speech"] == "log_issue record_landlord_contact set_deadline"
+
+
+def test_a_later_failure_keeps_what_was_already_saved(client, monkeypatch):
+    def fake(http, url, token, name, arguments):
+        if name == "set_deadline":
+            raise ToolError("That date is not valid.")
+        return {"speech": f"{name} done."}
+
+    monkeypatch.setattr(endpoints, "_parser", __import__("api.tests.test_chat_core", fromlist=["Multi"]).Multi())
+    monkeypatch.setattr(endpoints, "call_tool", fake)
+    response = post(client, message="leak again, texted him, promised Friday", token="t")
+    assert response.status_code == 200
+    assert "log_issue done." in response.json()["speech"] and "could not record the rest" in response.json()["speech"]

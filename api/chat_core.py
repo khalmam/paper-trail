@@ -21,6 +21,7 @@ class Action:
     arguments: dict
     reply: str | None = None
     pending: dict | None = None  # sent back by the client with the next message
+    then: tuple = ()  # further (tool, arguments) calls, made in order after the first
 
 
 def route(message: str, today: date, parser: IssueParser, budget: CallBudget,
@@ -51,7 +52,17 @@ def route(message: str, today: date, parser: IssueParser, budget: CallBudget,
             "description": parsed.description or text}
     if parsed.happened_on:
         args["happened_on"] = parsed.happened_on
-    return Action("log_issue", args)
+    follow = []
+    if parsed.contact_method:
+        contact = {"method": parsed.contact_method, "room": parsed.room,
+                   "note": parsed.contact_note or "Told the landlord about the problem"}
+        if parsed.contacted_on:
+            contact["contacted_on"] = parsed.contacted_on
+        follow.append(("record_landlord_contact", contact))
+    if parsed.deadline_on:
+        follow.append(("set_deadline", {"deadline": parsed.deadline_on, "room": parsed.room,
+                                        "what": parsed.deadline_what or "fix the problem"}))
+    return Action("log_issue", args, then=tuple(follow))
 
 
 LEAD_IN = re.compile(r"^(it'?s |it is |in |the |my )+")

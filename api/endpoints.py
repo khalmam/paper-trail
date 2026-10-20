@@ -33,12 +33,19 @@ async def chat(request, body: ChatIn):
     if action.tool is None:
         return {"speech": action.reply, "tool": None, "data": None, "pending": action.pending}
     url = getattr(settings, "MCP_URL", "http://127.0.0.1:8000/mcp")
-    try:
-        data = await asyncio.to_thread(call_tool, _client, url, body.token, action.tool, action.arguments)
-    except ToolError as exc:
-        return api.create_response(
-            request, {"speech": str(exc), "tool": action.tool, "data": None, "pending": None}, status=502)
-    return {"speech": data.get("speech") or "Done.", "tool": action.tool, "data": data, "pending": None}
+    speeches, first = [], None
+    for name, arguments in [(action.tool, action.arguments), *action.then]:
+        try:
+            data = await asyncio.to_thread(call_tool, _client, url, body.token, name, arguments)
+        except ToolError as exc:
+            if not speeches:
+                return api.create_response(
+                    request, {"speech": str(exc), "tool": action.tool, "data": None, "pending": None}, status=502)
+            speeches.append(f"I could not record the rest: {exc}")
+            break
+        first = first or data
+        speeches.append(data.get("speech") or "Done.")
+    return {"speech": " ".join(speeches), "tool": action.tool, "data": first, "pending": None}
 
 
 class PacketIn(Schema):

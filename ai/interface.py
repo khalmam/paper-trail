@@ -10,6 +10,11 @@ class ParsedIssue:
     description: str
     happened_on: str | None = None   # ISO date, or None meaning "today"
     question: str | None = None      # set when something essential is missing
+    contact_method: str | None = None   # how the landlord was told, if the tenant said so
+    contact_note: str | None = None
+    contacted_on: str | None = None     # ISO date; None means today
+    deadline_on: str | None = None      # only a date the tenant actually stated
+    deadline_what: str | None = None
 
     @property
     def complete(self) -> bool:
