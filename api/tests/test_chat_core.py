@@ -101,3 +101,12 @@ def test_letter_phrases_route_to_the_letter_tools():
 
 def test_talking_about_a_letter_does_not_write_anything_by_accident():
     assert go("should I send a letter?", Stub()).tool != "confirm_letter_sent"
+
+
+def test_only_a_clear_statement_that_the_letter_was_sent_writes_to_the_record():
+    parser = Stub()
+    for text in ("my neighbour sent a note about the leak and I told the landlord about it",
+                 "should I send a letter?", "I wrote down the date the letter from the council came",
+                 "he sent it back unfixed"):
+        assert go(text, parser).tool != "confirm_letter_sent", text
+    assert go("I sent the letter yesterday", parser).tool == "confirm_letter_sent"

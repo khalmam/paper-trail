@@ -11,8 +11,8 @@ MAX_CHARS = 500  # caps what one message can cost
 
 VERIFY = re.compile(r"\b(intact|tamper\w*|altered|verify|integrity)\b", re.I)
 PACKET = re.compile(r"\b(packet|full record)\b", re.I)
-DRAFT = re.compile(r"\b(draft|write|prepare)\b.*\bletter\b|\bletter\b.*\b(draft|write)\b", re.I)
-SENT = re.compile(r"\b(i |we )?(already )?(sent|mailed|posted|delivered)\b.*\b(it|letter)\b|\bletter (was|has been) sent\b", re.I)
+DRAFT = re.compile(r"\b(draft|write|prepare|make)\s+(me\s+)?(a|the|my)?\s*(formal\s+)?letter\b|\bletter\s+to\s+(my|the)\s+(landlord|property manager)\b", re.I)
+SENT = re.compile(r"\b(i|we)\s+(already\s+|just\s+)?(sent|mailed|posted|delivered)\s+(the|my|our|that)\s+letter\b|\b(the|my|our)\s+letter\s+(was|has been|got)\s+(sent|mailed|posted|delivered)\b", re.I)
 OPEN = re.compile(r"\bwhat('?s| is| are)?\b.*\b(open|outstanding)\b|\bopen (issues|problems)\b", re.I)
 
 
