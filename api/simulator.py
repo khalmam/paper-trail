@@ -25,6 +25,8 @@ details{margin-top:8px;font-size:.8rem;color:var(--mute)}pre{overflow-x:auto;max
 <div class="chips" id="chips">
 <button type="button">What's open?</button>
 <button type="button">There is a leak in the kitchen sink</button>
+<button type="button">Draft a letter</button>
+<button type="button">I sent the letter</button>
 <button type="button">Give me the packet</button>
 <button type="button">Is my record intact?</button>
 </div>
@@ -57,8 +59,16 @@ async function send(text){
       s.textContent='Details ('+b.tool+')';pre.textContent=JSON.stringify(b.data,null,2);
       det.appendChild(s);det.appendChild(pre);extra=det;
     }
-    add('bot',b.speech||'Done.',extra);speak(b.speech||'Done.');if(b.tool==='evidence_packet')showPacket();
+    add('bot',b.speech||'Done.',extra);speak(b.speech||'Done.');if(b.tool==='evidence_packet')showPacket();if(b.tool==='draft_letter'&&b.data)showLetter(b.data);
   }catch(e){add('bot','Could not reach the server.')}
+}
+function showLetter(l){
+  const pre=document.createElement('pre');pre.style.whiteSpace='pre-wrap';
+  pre.textContent=l.subject+'\n\n'+l.body+'\n\n'+l.note;
+  const b=document.createElement('button');b.type='button';b.textContent='Copy letter';
+  b.onclick=function(){navigator.clipboard.writeText(l.subject+'\n\n'+l.body)};
+  const wrap=document.createElement('div');wrap.appendChild(pre);wrap.appendChild(b);
+  add('bot','Here is your draft.',wrap);
 }
 let packetHtml=null;
 async function showPacket(){

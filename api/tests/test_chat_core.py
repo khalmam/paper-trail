@@ -83,8 +83,21 @@ def test_one_sentence_becomes_issue_then_contact_then_deadline():
     action = go("leak again, I texted him yesterday and he promised Friday", Multi())
     assert action.tool == "log_issue"
     assert [name for name, _ in action.then] == ["record_landlord_contact", "set_deadline"]
-    assert action.then[0][1]["room"] == "bedroom" and action.then[1][1]["deadline"] == "2026-10-23"
+    assert action.then[0][1]["room"] == "bedroom" and action.then[1][1]["deadline"] == "2026-10-16"  # next Friday after Thu 2026-10-15, computed by code
 
 
 def test_a_plain_report_has_no_follow_up_calls():
     assert go("leak in the bedroom").then == ()
+
+
+def test_letter_phrases_route_to_the_letter_tools():
+    parser = Stub()
+    assert go("draft a letter to my landlord", parser).tool == "draft_letter"
+    assert go("can you write the letter", parser).tool == "draft_letter"
+    assert go("I sent the letter", parser).tool == "confirm_letter_sent"
+    assert go("the letter was sent yesterday", parser).tool == "confirm_letter_sent"
+    assert parser.calls == 0
+
+
+def test_talking_about_a_letter_does_not_write_anything_by_accident():
+    assert go("should I send a letter?", Stub()).tool != "confirm_letter_sent"

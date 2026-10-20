@@ -11,6 +11,8 @@ MAX_CHARS = 500  # caps what one message can cost
 
 VERIFY = re.compile(r"\b(intact|tamper\w*|altered|verify|integrity)\b", re.I)
 PACKET = re.compile(r"\b(packet|full record)\b", re.I)
+DRAFT = re.compile(r"\b(draft|write|prepare)\b.*\bletter\b|\bletter\b.*\b(draft|write)\b", re.I)
+SENT = re.compile(r"\b(i |we )?(already )?(sent|mailed|posted|delivered)\b.*\b(it|letter)\b|\bletter (was|has been) sent\b", re.I)
 OPEN = re.compile(r"\bwhat('?s| is| are)?\b.*\b(open|outstanding)\b|\bopen (issues|problems)\b", re.I)
 
 
@@ -31,6 +33,10 @@ def route(message: str, today: date, parser: IssueParser, budget: CallBudget,
         return Action(None, {}, "Tell me what's going on, like a leak in the bedroom.", pending)
     if VERIFY.search(text):
         return Action("verify_integrity", {})
+    if DRAFT.search(text):
+        return Action("draft_letter", {})
+    if SENT.search(text):
+        return Action("confirm_letter_sent", {})
     if PACKET.search(text):
         return Action("evidence_packet", {})
     if OPEN.search(text):
