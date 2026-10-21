@@ -10,3 +10,8 @@ def test_demo_token_is_handed_out_when_configured(client, settings):
 
 def test_simulator_asks_for_the_demo_token(client):
     assert "/api/demo-token" in client.get("/simulator").content.decode()
+
+
+def test_simulator_script_keeps_newlines_escaped(client):
+    page = client.get("/simulator").content.decode()
+    assert "l.subject+'\\n\\n'+l.body" in page

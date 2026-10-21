@@ -64,9 +64,9 @@ async function send(text){
 }
 function showLetter(l){
   const pre=document.createElement('pre');pre.style.whiteSpace='pre-wrap';
-  pre.textContent=l.subject+'\n\n'+l.body+'\n\n'+l.note;
+  pre.textContent=l.subject+'\\n\\n'+l.body+'\\n\\n'+l.note;
   const b=document.createElement('button');b.type='button';b.textContent='Copy letter';
-  b.onclick=function(){navigator.clipboard.writeText(l.subject+'\n\n'+l.body)};
+  b.onclick=function(){navigator.clipboard.writeText(l.subject+'\\n\\n'+l.body)};
   const wrap=document.createElement('div');wrap.appendChild(pre);wrap.appendChild(b);
   add('bot','Here is your draft.',wrap);
 }
