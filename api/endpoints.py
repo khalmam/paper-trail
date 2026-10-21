@@ -63,3 +63,12 @@ async def packet(request, body: PacketIn):
     except ToolError as exc:
         return HttpResponse(str(exc), status=502, content_type="text/plain; charset=utf-8")
     return HttpResponse(render_packet(data), content_type="text/html; charset=utf-8")
+
+
+@api.get("/demo-token")
+def demo_token(request):
+    """The shared demo token, only on a server where DEMO_TOKEN was set on purpose."""
+    token = getattr(settings, "DEMO_TOKEN", None)
+    if not token:
+        return api.create_response(request, {"detail": "Not found"}, status=404)
+    return {"token": token}

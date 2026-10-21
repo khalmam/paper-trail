@@ -29,7 +29,8 @@ class Command(BaseCommand):
             c.execute("TRUNCATE ledger_entry, ledger_member, ledger_household RESTART IDENTITY CASCADE")
         now = timezone.now()
         hh = get_or_create_household(DEMO_HOUSEHOLD)
-        _, owner_token = create_member(household=hh, display_name="Ibrahim", role="owner")
+        _, owner_token = create_member(household=hh, display_name="Ibrahim", role="owner",
+                                       token=getattr(settings, "DEMO_TOKEN", None) or None)
         _, mate_token = create_member(household=hh, display_name="Amina")
 
         def leak(days_ago, author, text):
@@ -47,7 +48,24 @@ class Command(BaseCommand):
             payload={"room": "bedroom", "method": "text", "note": "Texted the landlord about the leak"},
         )
         leak(31, "Amina", "Stain spreading, drips after rain")
-        leak(2, "Ibrahim", "Ceiling is leaking again")
-        self.stdout.write(self.style.SUCCESS("Seeded 4 entries (fake data)."))
+        newest = leak(14, "Ibrahim", "Ceiling is leaking again")
+        append_entry(
+            household=hh, author="Ibrahim", kind="landlord_contact", issue_id=newest.issue_id,
+            at=now - timedelta(days=13),
+            payload={"room": "bedroom", "method": "text", "note": "Texted the landlord that the leak is back",
+                     "contacted_on": (now - timedelta(days=13)).date().isoformat()},
+        )
+
+        def deadline(set_days_ago, author, due_days_ago):
+            append_entry(
+                household=hh, author=author, kind="deadline_set", issue_id=newest.issue_id,
+                at=now - timedelta(days=set_days_ago),
+                payload={"room": "bedroom", "what": "fix the ceiling",
+                         "deadline_date": (now - timedelta(days=due_days_ago)).date().isoformat()},
+            )
+
+        deadline(12, "Ibrahim", 8)  # the landlord promised a date, and it lapsed
+        deadline(11, "Amina", 9)    # the roommates recorded different dates
+        self.stdout.write(self.style.SUCCESS("Seeded 7 entries (fake data)."))
         self.stdout.write(f"Ibrahim token: {owner_token}")
         self.stdout.write(f"Amina token:   {mate_token}")

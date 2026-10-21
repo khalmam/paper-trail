@@ -9,9 +9,10 @@ def _hash(raw: str) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
-def create_member(*, household: Household, display_name: str, role: str = Member.Role.MEMBER) -> tuple[Member, str]:
+def create_member(*, household: Household, display_name: str, role: str = Member.Role.MEMBER,
+                  token: str | None = None) -> tuple[Member, str]:
     """Returns (member, raw_token). The raw token is shown once and never stored."""
-    raw = secrets.token_urlsafe(24)
+    raw = token or secrets.token_urlsafe(24)
     member = Member.objects.create(
         household=household, display_name=display_name, role=role, token_hash=_hash(raw)
     )

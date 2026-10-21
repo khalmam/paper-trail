@@ -41,3 +41,6 @@ LOGGING = {
 
 # Rolling window for recurrence detection ("third leak in 90 days").
 RECURRENCE_WINDOW_DAYS = int(env.get("RECURRENCE_WINDOW_DAYS", "90"))
+
+# Public demo only: when set, /api/demo-token hands this token to the simulator.
+DEMO_TOKEN = env.get("DEMO_TOKEN") or None

@@ -20,7 +20,7 @@ details{margin-top:8px;font-size:.8rem;color:var(--mute)}pre{overflow-x:auto;max
 </style></head><body><main>
 <h1>Paper Trail</h1>
 <p class="sim">Simulated voice assistant. Typing stands in for speech. Demo data only. Not legal advice. Every message goes through the real MCP server.</p>
-<label>Access token (from the seed output or the submission notes)
+<p class="sim" id="demo-note" hidden>Demo access is filled in for you. This is a shared demo household with fake data.</p>\n<label>Access token (from the seed output or the submission notes)
 <input id="tok" type="password" autocomplete="off" placeholder="paste a demo token"></label>
 <div class="chips" id="chips">
 <button type="button">What's open?</button>
@@ -110,6 +110,9 @@ if(SR){
     try{mic.classList.add('on');rec.start()}catch(e){mic.classList.remove('on')}
   };
 }
+fetch('/api/demo-token').then(function(r){return r.ok?r.json():null}).then(function(b){
+  if(b&&b.token){tok.value=b.token;document.getElementById('demo-note').hidden=false}
+}).catch(function(){});
 </script></body></html>"""
 
 
