@@ -1,4 +1,7 @@
+import os
+
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 from .tools import (
     add_update, confirm_letter_sent, correct_entry, draft_letter, evidence_packet, issue_timeline, log_issue,
@@ -13,7 +16,16 @@ TOOL_MODULES = (
 
 
 def build_mcp() -> FastMCP:
-    mcp = FastMCP("Paper Trail", stateless_http=True)
+    extra = [h.strip() for h in os.environ.get("MCP_ALLOWED_HOSTS", "").split(",") if h.strip()]
+    hosts = ["127.0.0.1", "127.0.0.1:*", "localhost", "localhost:*"]
+    hosts += [h for e in extra for h in (e, f"{e}:*")]
+    mcp = FastMCP(
+        "Paper Trail", stateless_http=True,
+        transport_security=TransportSecuritySettings(
+            enable_dns_rebinding_protection=True, allowed_hosts=hosts,
+            allowed_origins=[f"http://{h}" for h in hosts] + [f"https://{h}" for h in hosts],
+        ),
+    )
     for module in TOOL_MODULES:  # add new tool modules here
         module.register(mcp)
     return mcp
