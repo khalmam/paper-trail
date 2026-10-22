@@ -43,7 +43,7 @@ async def chat(request, body: ChatIn):
         except ToolError as exc:
             if not speeches:
                 return api.create_response(
-                    request, {"speech": str(exc), "tool": action.tool, "data": None, "pending": None}, status=502)
+                    request, {"speech": _plain(exc), "tool": action.tool, "data": None, "pending": None}, status=502)
             speeches.append(f"I could not record the rest: {exc}")
             break
         first = first or data
@@ -110,3 +110,11 @@ async def _answer(request, token, question):
     except Exception:
         speech = plain_summary(facts)
     return {"speech": speech, "tool": "record_facts", "data": facts, "pending": None}
+
+
+import re as _re
+
+
+def _plain(exc) -> str:
+    """Drop the tool plumbing from an error so the person hears only what to fix."""
+    return _re.sub(r"^Error executing tool \w+: ", "", str(exc))

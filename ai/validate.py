@@ -6,6 +6,15 @@ from ledger.domain.vocab import CATEGORIES, CONTACT_METHODS
 
 from .interface import IssueParser, ParsedIssue
 
+_PLACEHOLDERS = {"unknown", "none", "n/a", "na", "null", "undefined", "other", "tbd", "?", "not said", "not stated"}
+
+
+def is_placeholder(value) -> bool:
+    """Model filler such as <unknown> or N/A counts as missing, never as a real answer."""
+    v = (value or "").strip()
+    return (not v) or "<" in v or ">" in v or v.lower().strip("[]() .!?") in _PLACEHOLDERS
+
+
 QUESTIONS = {
     "room": "Which room is it in?",
     "category": "What kind of problem is it: a leak, mold, heating, pests, something structural, or electrical?",
@@ -24,7 +33,7 @@ def _iso(value, today, allow_future):
 
 def enforce_vocab(raw: ParsedIssue, today: date) -> ParsedIssue:
     """Force any parser's output into our fixed lists. Rules, not the model, choose the question."""
-    room = (raw.room or "").strip().lower() or None
+    room = None if is_placeholder(raw.room) else raw.room.strip().lower()
     category = (raw.category or "").strip().lower()
     category = category if category in CATEGORIES else None
     happened = raw.happened_on
@@ -37,7 +46,7 @@ def enforce_vocab(raw: ParsedIssue, today: date) -> ParsedIssue:
     question = QUESTIONS["room"] if room is None else (QUESTIONS["category"] if category is None else None)
     method = raw.contact_method if raw.contact_method in CONTACT_METHODS else None
     return ParsedIssue(
-        room, category, (raw.description or "").strip(), happened, question,
+        room, category, "" if is_placeholder(raw.description) else raw.description.strip(), happened, question,
         contact_method=method,
         contact_note=((raw.contact_note or "").strip() or None) if method else None,
         contacted_on=_iso(raw.contacted_on, today, False) if method else None,
