@@ -28,3 +28,9 @@ def test_simulator_script_parses(client, tmp_path):
     f.write_text("\n".join(scripts))
     r = subprocess.run(["node", "--check", str(f)], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
+
+
+def test_simulator_skin_respects_reduced_motion_and_never_animates_all(client):
+    page = client.get("/simulator").content.decode()
+    assert "prefers-reduced-motion" in page and "pt-line" in page
+    assert "transition:all" not in page.replace(" ", "")
