@@ -16,6 +16,10 @@ SENT = re.compile(r"\b(i|we)\s+(already\s+|just\s+)?(sent|mailed|posted|delivere
 OPEN = re.compile(r"\bwhat('?s| is| are)?\b.*\b(open|outstanding)\b|\bopen (issues|problems)\b", re.I)
 
 
+QUESTION = re.compile(r"\?\s*$|^\s*(when|which|who|whom|whose|what|why|how|did|do|does|have|has|is|are|was|were|am|any|list|show|tell|explain|summari[sz]e)\b", re.I)
+ASKS_TO_ACT = re.compile(r"^\s*(please\b|(can|could|would|will)\s+you\b)", re.I)
+
+
 @dataclass(frozen=True)
 class Action:
     """tool set: the endpoint calls it and speaks its answer. tool None: speak `reply`."""
@@ -24,6 +28,7 @@ class Action:
     reply: str | None = None
     pending: dict | None = None  # sent back by the client with the next message
     then: tuple = ()  # further (tool, arguments) calls, made in order after the first
+    ask: str | None = None  # a question about the record: answered from facts, never written
 
 
 def route(message: str, today: date, parser: IssueParser, budget: CallBudget,
@@ -41,6 +46,8 @@ def route(message: str, today: date, parser: IssueParser, budget: CallBudget,
         return Action("evidence_packet", {})
     if OPEN.search(text):
         return Action("whats_open", {})
+    if not pending and QUESTION.search(text) and not ASKS_TO_ACT.search(text):
+        return Action("record_facts", {}, ask=text)
 
     utterance = f"{pending.get('utterance', '')} {text}".strip() if pending else text
     try:

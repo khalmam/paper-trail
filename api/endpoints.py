@@ -8,8 +8,9 @@ from django.http import HttpResponse
 from ninja import NinjaAPI, Schema
 from render.packet_html import render_packet
 
-from ai.factory import make_parser
-from ai.guards import CallBudget
+from ai.answer import plain_summary
+from ai.factory import make_answerer, make_parser
+from ai.guards import BudgetExceeded, CallBudget, call_with_retries
 
 from .chat_core import route
 from .mcp_client import ToolError, call_tool
@@ -32,6 +33,8 @@ async def chat(request, body: ChatIn):
     action = await asyncio.to_thread(route, body.message, date.today(), _parser, _budget, body.pending)
     if action.tool is None:
         return {"speech": action.reply, "tool": None, "data": None, "pending": action.pending}
+    if action.ask:
+        return await _answer(request, body.token, action.ask)
     url = getattr(settings, "MCP_URL", "http://127.0.0.1:8000/mcp")
     speeches, first = [], None
     for name, arguments in [(action.tool, action.arguments), *action.then]:
@@ -86,3 +89,24 @@ async def ledger(request, body: LedgerIn):
         return await asyncio.to_thread(call_tool, _client, url, body.token, "ledger_view", {})
     except ToolError as exc:
         return api.create_response(request, {"detail": str(exc)}, status=502)
+
+
+_answerer = make_answerer()
+
+
+async def _answer(request, token, question):
+    """Questions: read the facts through the MCP server, then let the answerer reply. Nothing is written."""
+    url = getattr(settings, "MCP_URL", "http://127.0.0.1:8000/mcp")
+    try:
+        facts = await asyncio.to_thread(call_tool, _client, url, token, "record_facts", {})
+    except ToolError as exc:
+        return api.create_response(
+            request, {"speech": str(exc), "tool": "record_facts", "data": None, "pending": None}, status=502)
+    ask = lambda: call_with_retries(lambda: _answerer.answer(question, facts, date.today()), _budget, max_attempts=1)
+    try:
+        speech = await asyncio.to_thread(ask)
+    except BudgetExceeded as exc:
+        speech = f"{exc} {plain_summary(facts)}"
+    except Exception:
+        speech = plain_summary(facts)
+    return {"speech": speech, "tool": "record_facts", "data": facts, "pending": None}

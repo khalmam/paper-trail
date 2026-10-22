@@ -5,22 +5,22 @@ from mcp_server.identity import resolve_identity
 from mcp_server.runner import run_db
 
 NUMBER_WORDS = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+MAX_SPOKEN = 5
 
 
 def _days(n: int) -> str:
     return f"{n} day" if n == 1 else f"{n} days"
 
 
-def _headline(top) -> str:
-    text = f"Most urgent is the {top.room} {top.category}"
-    d = top.days_until_deadline
+def _status(item) -> str:
+    d = item.days_until_deadline
     if d is None:
-        return text + ", with no deadline set."
+        return "no deadline set"
     if d < 0:
-        return text + f", which is {_days(-d)} past its deadline."
+        return f"{_days(-d)} past its deadline"
     if d == 0:
-        return text + ", due today."
-    return text + f", due in {_days(d)}."
+        return "due today"
+    return f"due in {_days(d)}"
 
 
 def _repeat_sentence(top, recurrences) -> str:
@@ -29,6 +29,21 @@ def _repeat_sentence(top, recurrences) -> str:
         return ""
     times = NUMBER_WORDS.get(rec.count, str(rec.count))
     return f" This kind of problem has happened {times} times in the {rec.room} in the last {rec.window_days} days."
+
+
+def _speech(result) -> str:
+    items = result.open
+    if not items:
+        return "You have no open issues."
+    n = len(items)
+    shown = "; ".join(f"the {i.room} {i.category}, {_status(i)}" for i in items[:MAX_SPOKEN])
+    more = f"; and {n - MAX_SPOKEN} more" if n > MAX_SPOKEN else ""
+    speech = f"You have {n} open issue{'s' if n != 1 else ''}: {shown}{more}."
+    speech += _repeat_sentence(items[0], result.recurrences)
+    conflicts = [c for c in result.conflicts if c.issue_id == items[0].issue_id]
+    if conflicts:
+        speech += " " + conflicts[0].message
+    return speech + " " + result.guidance[items[0].issue_id].step.message
 
 
 def register(mcp: FastMCP) -> None:
@@ -41,26 +56,11 @@ def register(mcp: FastMCP) -> None:
         who = await resolve_identity()
         result = await run_db(overview, who.household)
         items = result.open
-        if not items:
-            speech = "You have no open issues."
-        else:
-            n = len(items)
-            speech = f"You have {n} open issue{'s' if n != 1 else ''}. " + _headline(items[0])
-            speech += _repeat_sentence(items[0], result.recurrences)
-            top_conflicts = [c for c in result.conflicts if c.issue_id == items[0].issue_id]
-            if top_conflicts:
-                speech += " " + top_conflicts[0].message
-            g = result.guidance[items[0].issue_id]
-            speech += " " + g.step.message
-            skip = ("landlord_contact",) if g.step.action == "contact_landlord" else ()
-            hint = g.completeness.next_suggestion(skip)
-            if hint:
-                speech += f" To strengthen your record, add {hint}."
         return {
             "count": len(items),
             "issues": [i.to_dict() for i in items],
             "recurrences": [r.to_dict() for r in result.recurrences],
             "conflicts": [c.to_dict() for c in result.conflicts],
             "guidance": [result.guidance[i.issue_id].to_dict() for i in items],
-            "speech": speech,
+            "speech": _speech(result),
         }
