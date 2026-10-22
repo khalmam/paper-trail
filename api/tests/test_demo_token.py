@@ -15,3 +15,16 @@ def test_simulator_asks_for_the_demo_token(client):
 def test_simulator_script_keeps_newlines_escaped(client):
     page = client.get("/simulator").content.decode()
     assert "l.subject+'\\n\\n'+l.body" in page
+
+
+def test_simulator_script_parses(client, tmp_path):
+    import re, shutil, subprocess, pytest
+    if not shutil.which("node"):
+        pytest.skip("node not installed")
+    page = client.get("/simulator").content.decode()
+    scripts = re.findall(r"<script>(.*?)</script>", page, re.S)
+    assert scripts
+    f = tmp_path / "s.js"
+    f.write_text("\n".join(scripts))
+    r = subprocess.run(["node", "--check", str(f)], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr

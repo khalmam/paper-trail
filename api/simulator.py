@@ -113,6 +113,50 @@ if(SR){
 fetch('/api/demo-token').then(function(r){return r.ok?r.json():null}).then(function(b){
   if(b&&b.token){tok.value=b.token;document.getElementById('demo-note').hidden=false}
 }).catch(function(){});
+(function(){
+var COL={issue_logged:'#dc2626',update:'#64748b',landlord_contact:'#2563eb',deadline_set:'#d97706',letter_sent:'#7c3aed',resolved:'#15803d',correction:'#db2777'};
+var st=document.createElement('style');
+st.textContent='#pt-panel{position:fixed;top:0;right:0;width:300px;height:100%;overflow:auto;background:#f8fafc;border-left:1px solid #cbd5e1;padding:12px;box-sizing:border-box;font:13px system-ui,sans-serif}@media(max-width:1250px){#pt-panel{display:none}}#pt-badge{padding:8px 10px;border-radius:8px;font-weight:600;color:#fff;background:#64748b}#pt-badge.ok{background:#15803d}#pt-badge.bad{background:#b91c1c}.pt-card{border-left:4px solid #64748b;background:#fff;border-radius:6px;padding:6px 8px;margin:6px 0}.pt-new{animation:ptin .6s}.pt-h{font:11px ui-monospace,monospace;color:#64748b}@keyframes ptin{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}';
+document.head.appendChild(st);
+var panel=document.createElement('div');panel.id='pt-panel';
+var title=document.createElement('div');title.textContent='Sealed record (live from the MCP server)';title.style.cssText='font-weight:700;margin-bottom:8px';
+var badge=document.createElement('div');badge.id='pt-badge';badge.textContent='Checking record...';
+var list=document.createElement('div');
+var btn=document.createElement('button');btn.type='button';btn.textContent='Verify now';btn.style.cssText='margin:8px 0;padding:4px 10px';
+panel.appendChild(title);panel.appendChild(badge);panel.appendChild(btn);panel.appendChild(list);document.body.appendChild(panel);
+var last=null;
+function render(d){
+  var i=d.integrity;
+  badge.className=i.ok?'ok':'bad';
+  badge.id='pt-badge';
+  badge.textContent=i.ok?('Record intact: '+i.verified+' entries verified'):(i.reason||('Entry '+i.bad_seq+' was altered'));
+  list.textContent=String(Array.from?'':'');
+  d.entries.forEach(function(e){
+    var c=document.createElement('div');
+    c.className='pt-card'+((last!==null&&e.seq>last)?' pt-new':String(''));
+    c.style.borderLeftColor=COL[e.kind]||'#64748b';
+    if(i.bad_seq&&e.seq===i.bad_seq+0&&!i.ok){c.style.background='#fee2e2'}
+    var h=document.createElement('div');h.style.fontWeight='600';h.textContent='#'+e.seq+' '+e.kind.split('_').join(' ')+' - '+e.author;
+    var s=document.createElement('div');s.textContent=e.summary;
+    var x=document.createElement('div');x.className='pt-h';x.textContent=e.date+'  hash '+e.hash+'  prev '+e.prev_hash;
+    c.appendChild(h);c.appendChild(s);c.appendChild(x);list.appendChild(c);
+  });
+  if(d.entries.length){last=d.entries[d.entries.length-1].seq}
+}
+function refresh(){
+  if(!tok.value){return}
+  fetch('/api/ledger',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:tok.value})})
+   .then(function(r){return r.ok?r.json():null}).then(function(d){if(d){render(d)}}).catch(function(){});
+}
+btn.onclick=refresh;
+var of=window.fetch;
+window.fetch=function(u){var p=of.apply(this,arguments);
+  if(String(u).indexOf('/api/chat')>-1){p.then(function(){setTimeout(refresh,300)}).catch(function(){})}
+  return p};
+tok.addEventListener('change',refresh);
+setTimeout(refresh,1200);
+})();
+
 </script></body></html>"""
 
 

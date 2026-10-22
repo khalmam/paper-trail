@@ -72,3 +72,17 @@ def demo_token(request):
     if not token:
         return api.create_response(request, {"detail": "Not found"}, status=404)
     return {"token": token}
+
+
+class LedgerIn(Schema):
+    token: str
+
+
+@api.post("/ledger")
+async def ledger(request, body: LedgerIn):
+    """Entries plus the integrity result, fetched through the MCP server like every other call."""
+    url = getattr(settings, "MCP_URL", "http://127.0.0.1:8000/mcp")
+    try:
+        return await asyncio.to_thread(call_tool, _client, url, body.token, "ledger_view", {})
+    except ToolError as exc:
+        return api.create_response(request, {"detail": str(exc)}, status=502)

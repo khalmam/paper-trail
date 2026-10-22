@@ -5,13 +5,13 @@ from mcp.server.transport_security import TransportSecuritySettings
 
 from .tools import (
     add_update, confirm_letter_sent, correct_entry, draft_letter, evidence_packet, issue_timeline, log_issue,
-    record_landlord_contact, resolve_issue, set_deadline, verify_integrity, whats_open,
+    record_landlord_contact, resolve_issue, set_deadline, verify_integrity, whats_open, ledger_view,
 )
 
 TOOL_MODULES = (
     log_issue, add_update, record_landlord_contact, set_deadline, resolve_issue,
     whats_open, issue_timeline, correct_entry, evidence_packet, verify_integrity,
-    draft_letter, confirm_letter_sent,
+    draft_letter, confirm_letter_sent, ledger_view,
 )
 
 
