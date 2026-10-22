@@ -9,7 +9,7 @@ from ninja import NinjaAPI, Schema
 from render.packet_html import render_packet
 
 from ai.answer import plain_summary
-from ai.factory import make_answerer, make_parser
+from ai.factory import make_answerer, make_converser, make_parser
 from ai.guards import BudgetExceeded, CallBudget, call_with_retries
 
 from .chat_core import route
@@ -19,6 +19,7 @@ api = NinjaAPI(urls_namespace="chat-api", docs_url=None)  # no public docs page
 
 _budget = CallBudget(getattr(settings, "AI_DAILY_CALL_LIMIT", 100))
 _parser = make_parser()  # offline by default; PAPER_TRAIL_PARSER=bedrock turns on Bedrock
+_converser = make_converser()  # None offline: the rules in chat_core then decide alone
 _client = httpx.Client(timeout=20)
 
 
@@ -31,7 +32,8 @@ class ChatIn(Schema):
 
 @api.post("/chat")
 async def chat(request, body: ChatIn):
-    action = await asyncio.to_thread(route, body.message, date.today(), _parser, _budget, body.pending)
+    action = await asyncio.to_thread(route, body.message, date.today(), _parser, _budget, body.pending,
+                                    _converser, body.history)
     if action.tool is None:
         return {"speech": action.reply, "tool": None, "data": None, "pending": action.pending}
     if action.ask:

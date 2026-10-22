@@ -3,6 +3,7 @@ import os
 
 from .answer import BedrockAnswerer, FakeAnswerer, FallbackAnswerer
 from .bedrock import BedrockParser, FallbackParser
+from .converse import BedrockConverser
 from .fake import FakeParser
 
 DEFAULT_MODEL = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
@@ -28,6 +29,13 @@ def make_parser():
         return FakeParser()
     client, model = _bedrock()
     return FallbackParser(BedrockParser(client, model), FakeParser())
+
+
+def make_converser():
+    if not _enabled():
+        return None
+    client, model = _bedrock()
+    return BedrockConverser(client, model)
 
 
 def make_answerer():
