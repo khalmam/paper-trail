@@ -17,6 +17,8 @@ OPEN = re.compile(r"\bwhat('?s| is| are)?\b.*\b(open|outstanding)\b|\bopen (issu
 
 
 QUESTION = re.compile(r"\?\s*$|^\s*(when|which|who|whom|whose|what|why|how|did|do|does|have|has|is|are|was|were|am|any|list|show|tell|explain|summari[sz]e)\b", re.I)
+GREETING = re.compile(r"^\s*(hi|hello|hey|yo|thanks|thank you|good (morning|afternoon|evening))\b[\s!.,]*$", re.I)
+CANCEL = re.compile(r"^\s*(cancel|never ?mind|forget it|start over)\b[\s!.]*$", re.I)
 ASKS_TO_ACT = re.compile(r"^\s*(please\b|(can|could|would|will)\s+you\b)", re.I)
 
 
@@ -46,8 +48,21 @@ def route(message: str, today: date, parser: IssueParser, budget: CallBudget,
         return Action("evidence_packet", {})
     if OPEN.search(text):
         return Action("whats_open", {})
-    if not pending and QUESTION.search(text) and not ASKS_TO_ACT.search(text):
+    if CANCEL.search(text):
+        return Action(None, {}, "Okay, I dropped that. Tell me what is wrong, or ask what is open.")
+    if GREETING.match(text):
+        return Action(None, {}, "Hi. Tell me what is wrong, like a leak in the bedroom, or ask what is open.")
+    if not pending:
+        asking = QUESTION.search(text)
+    elif pending.get("asked") == "description":
+        asking = text.rstrip().endswith("?")
+    else:
+        asking = text.rstrip().endswith("?") and len(text.split()) > 4
+    if asking and not ASKS_TO_ACT.search(text):
         return Action("record_facts", {}, ask=text)
+    if pending and pending.get("asked") == "description" and pending.get("room"):
+        text = f"{text} in the {pending['room']}"
+        pending = None
 
     utterance = f"{pending.get('utterance', '')} {text}".strip() if pending else text
     try:
@@ -63,7 +78,7 @@ def route(message: str, today: date, parser: IssueParser, budget: CallBudget,
 
     if parsed.category == "other" and len((parsed.description or "").split()) < 3:
         return Action(None, {}, f"What is the problem in the {parsed.room}?",
-                      {"utterance": utterance, "asked": "description"})
+                      {"utterance": utterance, "asked": "description", "room": parsed.room})
     args = {"room": parsed.room, "category": parsed.category,
             "description": parsed.description or utterance}
     if parsed.happened_on:
