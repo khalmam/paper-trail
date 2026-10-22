@@ -36,7 +36,7 @@ def _speech(result) -> str:
     if not items:
         return "You have no open issues."
     n = len(items)
-    shown = "; ".join(f"the {i.room} {i.category}, {_status(i)}" for i in items[:MAX_SPOKEN])
+    shown = "; ".join(f"the {i.room} {i.category} from {i.logged_on}, {_status(i)}" for i in items[:MAX_SPOKEN])
     more = f"; and {n - MAX_SPOKEN} more" if n > MAX_SPOKEN else ""
     speech = f"You have {n} open issue{'s' if n != 1 else ''}: {shown}{more}."
     speech += _repeat_sentence(items[0], result.recurrences)

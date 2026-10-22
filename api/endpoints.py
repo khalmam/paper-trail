@@ -26,6 +26,7 @@ class ChatIn(Schema):
     message: str
     token: str
     pending: dict | None = None
+    history: list[dict] | None = None
 
 
 @api.post("/chat")
@@ -34,7 +35,7 @@ async def chat(request, body: ChatIn):
     if action.tool is None:
         return {"speech": action.reply, "tool": None, "data": None, "pending": action.pending}
     if action.ask:
-        return await _answer(request, body.token, action.ask)
+        return await _answer(request, body.token, action.ask, body.history)
     url = getattr(settings, "MCP_URL", "http://127.0.0.1:8000/mcp")
     speeches, first = [], None
     for name, arguments in [(action.tool, action.arguments), *action.then]:
@@ -94,7 +95,7 @@ async def ledger(request, body: LedgerIn):
 _answerer = make_answerer()
 
 
-async def _answer(request, token, question):
+async def _answer(request, token, question, history=None):
     """Questions: read the facts through the MCP server, then let the answerer reply. Nothing is written."""
     url = getattr(settings, "MCP_URL", "http://127.0.0.1:8000/mcp")
     try:
@@ -102,7 +103,7 @@ async def _answer(request, token, question):
     except ToolError as exc:
         return api.create_response(
             request, {"speech": str(exc), "tool": "record_facts", "data": None, "pending": None}, status=502)
-    ask = lambda: call_with_retries(lambda: _answerer.answer(question, facts, date.today()), _budget, max_attempts=1)
+    ask = lambda: call_with_retries(lambda: _answerer.answer(question, facts, date.today(), history), _budget, max_attempts=1)
     try:
         speech = await asyncio.to_thread(ask)
     except BudgetExceeded as exc:

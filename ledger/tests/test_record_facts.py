@@ -22,3 +22,12 @@ def test_facts_come_from_the_record_and_reading_writes_nothing(hh):
     assert issue["deadlines_recorded"][0]["date"] == "2026-10-03"
     assert len(facts["entries"]) == 3
     assert Entry.objects.filter(household=hh).count() == before
+
+
+def test_each_issue_carries_its_own_counts(hh):
+    log_issue(household=hh, author="Ibrahim", room="Bedroom", category="leak", description="ceiling drips")
+    record_landlord_contact(household=hh, author="Ibrahim", method="text", note="told him", room="bedroom")
+    log_issue(household=hh, author="Ibrahim", room="Kitchen", category="leak", description="sink drips")
+    by_room = {i["room"]: i for i in record_facts(hh, today=date(2026, 10, 11))["open_issues"]}
+    assert by_room["bedroom"]["landlord_contact_count"] == 1
+    assert by_room["kitchen"]["landlord_contact_count"] == 0

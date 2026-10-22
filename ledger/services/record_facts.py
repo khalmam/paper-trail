@@ -33,6 +33,11 @@ def record_facts(household: Household, today: date | None = None) -> dict:
                 for e in group if e.kind == Entry.Kind.DEADLINE_SET],
             "letters_sent_on": [e.payload.get("sent_on") for e in group if e.kind == Entry.Kind.LETTER_SENT],
         })
+        o = open_issues[-1]
+        o["landlord_contact_count"] = len(o["landlord_contacts"])
+        o["deadline_count"] = len(o["deadlines_recorded"])
+        o["letters_sent_count"] = len(o["letters_sent_on"])
+        o["label"] = f"{s.room} {s.category} first reported {s.logged_on}"
     return {
         "today": today.isoformat(),
         "open_issues": open_issues,

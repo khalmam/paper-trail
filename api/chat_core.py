@@ -61,8 +61,11 @@ def route(message: str, today: date, parser: IssueParser, budget: CallBudget,
         asked = "room" if parsed.room is None else "category"
         return Action(None, {}, parsed.question, {"utterance": utterance, "asked": asked})
 
+    if parsed.category == "other" and len((parsed.description or "").split()) < 3:
+        return Action(None, {}, f"What is the problem in the {parsed.room}?",
+                      {"utterance": utterance, "asked": "description"})
     args = {"room": parsed.room, "category": parsed.category,
-            "description": parsed.description or text}
+            "description": parsed.description or utterance}
     if parsed.happened_on:
         args["happened_on"] = parsed.happened_on
     follow = []

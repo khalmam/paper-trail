@@ -40,6 +40,7 @@ details{margin-top:8px;font-size:.8rem;color:var(--mute)}pre{overflow-x:auto;max
 <script>
 const log=document.getElementById('log'),tok=document.getElementById('tok'),msg=document.getElementById('msg');
 let pending=null;
+let hist=[];
 function add(cls,text,extra){
   const d=document.createElement('div');d.className='m '+cls;
   const p=document.createElement('p');p.textContent=text;d.appendChild(p);
@@ -52,10 +53,12 @@ async function send(text){
   add('me',text);
   try{
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({message:text,token:tok.value.trim(),pending:pending})});
+      body:JSON.stringify({message:text,token:tok.value.trim(),pending:pending,history:hist.slice(-8)})});
     const b=await r.json();
     if(r.status===422){add('bot','That request was missing something.');return}
     pending=b.pending||null;
+    hist.push({role:'user',text:text},{role:'assistant',text:String(b.speech||'')});
+    hist=hist.slice(-8);
     let extra=null;
     if(b.data){
       const det=document.createElement('details'),s=document.createElement('summary'),pre=document.createElement('pre');

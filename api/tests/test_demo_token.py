@@ -34,3 +34,8 @@ def test_simulator_skin_respects_reduced_motion_and_never_animates_all(client):
     page = client.get("/simulator").content.decode()
     assert "prefers-reduced-motion" in page and "pt-line" in page
     assert "transition:all" not in page.replace(" ", "")
+
+
+def test_simulator_sends_recent_turns_with_each_message(client):
+    page = client.get("/simulator").content.decode()
+    assert "history:hist.slice(-8)" in page and "let hist=[];" in page
