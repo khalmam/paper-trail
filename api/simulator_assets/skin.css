@@ -59,3 +59,6 @@ pre{background:var(--bg);border-radius:10px;padding:10px}
 @media(prefers-reduced-motion:reduce){.pt-row{transform:none;transition:opacity 150ms linear}.pt-line{transition:none}.m:not(.me){transition:opacity 150ms linear}@starting-style{.m:not(.me){transform:none}}button:active{transform:none}}
 @media(prefers-reduced-transparency:reduce){#pt-panel,#f{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--card)}}
 .adv{margin:0 0 12px}.adv summary{cursor:pointer;color:var(--mute);font-size:.8rem}
+@keyframes pt-pulse{0%{box-shadow:0 0 0 0 rgba(179,38,30,.55)}70%{box-shadow:0 0 0 12px rgba(179,38,30,0)}100%{box-shadow:0 0 0 0 rgba(179,38,30,0)}}
+#f .mic.on{animation:pt-pulse 1.2s ease-out infinite}
+@media(prefers-reduced-motion:reduce){#f .mic.on{animation:none}}

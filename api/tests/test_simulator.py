@@ -13,3 +13,8 @@ def test_simulator_posts_to_the_chat_endpoint(client):
 def test_simulator_offers_voice_input_and_spoken_replies(client):
     html = client.get("/simulator").content.decode()
     assert "SpeechRecognition" in html and "speechSynthesis" in html
+
+
+def test_mic_shows_a_listening_state(client):
+    html = client.get("/simulator").content.decode()
+    assert "pt-pulse" in html and "Listening..." in html

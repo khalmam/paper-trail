@@ -122,6 +122,13 @@ if(SR){
   mic.hidden=false;
   const rec=new SR();rec.lang='en-US';rec.interimResults=false;
   rec.onresult=function(e){send(e.results[0][0].transcript)};
+  let tick=null,t0=0;
+  rec.addEventListener('start',function(){
+    mic.classList.add('on');t0=Date.now();mic.textContent='Listening... 0s';
+    clearInterval(tick);tick=setInterval(function(){mic.textContent='Listening... '+Math.floor((Date.now()-t0)/1000)+'s'},250);
+  });
+  const stopped=function(){clearInterval(tick);mic.classList.remove('on');mic.textContent='Mic'};
+  rec.addEventListener('end',stopped);rec.addEventListener('error',stopped);
   rec.onend=rec.onerror=function(){mic.classList.remove('on')};
   mic.onclick=function(){
     if(window.speechSynthesis)speechSynthesis.cancel();
