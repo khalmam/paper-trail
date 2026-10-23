@@ -16,7 +16,7 @@ input{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;bac
 .m p{margin:0;white-space:pre-wrap}.me{align-self:flex-end;background:var(--me)}
 details{margin-top:8px;font-size:.8rem;color:var(--mute)}pre{overflow-x:auto;max-height:260px;font-size:.75rem}
 #f{display:flex;gap:8px}button{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:inherit;cursor:pointer}
-.mic.on{background:#b3261e}.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.chips button{background:transparent;color:var(--accent);border:1px solid var(--line);padding:4px 10px;font-size:.85rem}
+.m.wait{color:var(--mute);font-style:italic}.confirm{display:flex;gap:8px;margin-top:10px}.confirm .no{background:transparent;color:var(--accent);border:1px solid var(--line)}.mic.on{background:#b3261e}.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.chips button{background:transparent;color:var(--accent);border:1px solid var(--line);padding:4px 10px;font-size:.85rem}
 </style>
 <style id="skin">
 /*SKIN_CSS*/</style></head><body><main>
@@ -46,11 +46,13 @@ function add(cls,text,extra){
   const p=document.createElement('p');p.textContent=text;d.appendChild(p);
   if(extra)d.appendChild(extra);
   log.appendChild(d);d.scrollIntoView({block:'end'});
+  return d;
 }
 async function send(text){
   if(!text)return;
   if(!tok.value.trim()){add('bot','Paste an access token first.');return}
   add('me',text);
+  const wait=add('bot','Checking your record...');wait.classList.add('wait');
   try{
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({message:text,token:tok.value.trim(),pending:pending,history:hist.slice(-8)})});
@@ -65,8 +67,17 @@ async function send(text){
       s.textContent='Details ('+b.tool+')';pre.textContent=JSON.stringify(b.data,null,2);
       det.appendChild(s);det.appendChild(pre);extra=det;
     }
+    if(b.pending&&b.pending.confirm){
+      const box=document.createElement('div');box.className='confirm';
+      const yes=document.createElement('button');yes.type='button';yes.textContent='Yes, log it';
+      const no=document.createElement('button');no.type='button';no.className='no';no.textContent='No, change it';
+      const done=function(w){yes.disabled=true;no.disabled=true;send(w)};
+      yes.onclick=function(){done('yes')};no.onclick=function(){done('no')};
+      box.appendChild(yes);box.appendChild(no);
+      if(extra){extra.appendChild(box)}else{extra=box}
+    }
     add('bot',b.speech||'Done.',extra);speak(b.speech||'Done.');if(b.tool==='evidence_packet')showPacket();if(b.tool==='draft_letter'&&b.data)showLetter(b.data);
-  }catch(e){add('bot','Could not reach the server.')}
+  }catch(e){add('bot','Could not reach the server.')}finally{wait.remove()}
 }
 function showLetter(l){
   const pre=document.createElement('pre');pre.style.whiteSpace='pre-wrap';

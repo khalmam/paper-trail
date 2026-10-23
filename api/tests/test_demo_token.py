@@ -39,3 +39,9 @@ def test_simulator_skin_respects_reduced_motion_and_never_animates_all(client):
 def test_simulator_sends_recent_turns_with_each_message(client):
     page = client.get("/simulator").content.decode()
     assert "history:hist.slice(-8)" in page and "let hist=[];" in page
+
+
+def test_simulator_has_confirm_buttons_and_a_waiting_bubble(client):
+    page = client.get("/simulator").content.decode()
+    assert "Yes, log it" in page and "No, change it" in page
+    assert "Checking your record" in page and "wait.remove()" in page
