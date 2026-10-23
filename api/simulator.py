@@ -22,9 +22,9 @@ details{margin-top:8px;font-size:.8rem;color:var(--mute)}pre{overflow-x:auto;max
 /*SKIN_CSS*/</style></head><body><main>
 <h1>Paper Trail</h1>
 <p class="pt-tag">Say it once. Prove it forever.</p>
-<p class="sim">Simulated voice assistant. Typing stands in for speech. Demo data only. Not legal advice. Every message goes through the real MCP server.</p>
-<p class="sim" id="demo-note" hidden>Demo access is filled in for you. This is a shared demo household with fake data.</p><label>Access token (from the seed output or the submission notes)
-<input id="tok" type="password" autocomplete="off" placeholder="paste a demo token"></label>
+<p class="sim">Tell it what is wrong in your home. It keeps a sealed, tamper-evident record, tracks what your landlord has been told, and drafts the letter when they go quiet.</p><p class="sim">Demo with fake data. Typing stands in for speech.</p>
+<details class="adv"><summary>Access</summary><p class="sim" id="demo-note" hidden>Demo access is filled in for you.</p><label>Access token
+<input id="tok" type="password" autocomplete="off" placeholder="paste a demo token"></label></details>
 <div class="chips" id="chips">
 <button type="button">What's open?</button>
 <button type="button">There is a leak in the kitchen sink</button>

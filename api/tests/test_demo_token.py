@@ -45,3 +45,10 @@ def test_simulator_has_confirm_buttons_and_a_waiting_bubble(client):
     page = client.get("/simulator").content.decode()
     assert "Yes, log it" in page and "No, change it" in page
     assert "Checking your record" in page and "wait.remove()" in page
+
+
+def test_header_description_and_token_field(client):
+    page = client.get("/simulator").content.decode()
+    assert "sealed, tamper-evident record" in page
+    assert 'id="tok"' in page and 'id="demo-note"' in page
+    assert "Not legal advice" not in page.split("<main>")[1].split("<script>")[0]
