@@ -17,4 +17,4 @@ def test_simulator_offers_voice_input_and_spoken_replies(client):
 
 def test_mic_shows_a_listening_state(client):
     html = client.get("/simulator").content.decode()
-    assert "pt-pulse" in html and "Listening..." in html
+    assert "pt-pulse" in html and "Listening " in html

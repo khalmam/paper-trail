@@ -62,3 +62,4 @@ pre{background:var(--bg);border-radius:10px;padding:10px}
 @keyframes pt-pulse{0%{box-shadow:0 0 0 0 rgba(179,38,30,.55)}70%{box-shadow:0 0 0 12px rgba(179,38,30,0)}100%{box-shadow:0 0 0 0 rgba(179,38,30,0)}}
 #f .mic.on{animation:pt-pulse 1.2s ease-out infinite}
 @media(prefers-reduced-motion:reduce){#f .mic.on{animation:none}}
+#f .mic{white-space:nowrap;min-width:5rem}#f .mic.on{min-width:8.5rem}
