@@ -113,6 +113,7 @@ document.getElementById('chips').addEventListener('click',function(e){
 
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 const mic=document.getElementById('mic'),say=document.getElementById('say');
+mic.hidden=false;if(!SR){mic.disabled=true;mic.title='Voice input needs Chrome, Edge or Safari with dictation on';mic.style.opacity='.5'}
 function speak(t){
   if(!say.checked||!window.speechSynthesis)return;
   speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(t));
