@@ -1,62 +1,79 @@
 # Paper Trail
 
-A tenant evidence log you talk to. Say "the ceiling in the bedroom is leaking again" and the server stores a timestamped, **tamper-evident** record. Roommates can add to the same record. **Not legal advice.**
+A tenant evidence log you talk to. Say "the ceiling in the bedroom is leaking again" and Paper Trail stores a timestamped, **tamper-evident** record. Roommates add to the same record. When the landlord goes quiet, it drafts the letter from the record.
 
-Built for the Build, Ship, Shape: Amazon Developer Hackathon (Alexa+ track).
+Built for the Build, Ship, Shape: Amazon Developer Hackathon, **Alexa+ track** (MCP-based, simulated Alexa+ experience).
+
+**Live demo:** https://3-224-186-234.sslip.io/simulator (demo data only; access is filled in for you). Typing works in every browser. Voice input uses the browser's speech recognition, so it needs Chrome, Edge or Safari, and a secure page or localhost.
+
+**Not legal advice.**
+
+## What it does
+
+- Logs problems by conversation: it asks which room and what is wrong, then **proposes the entry and waits for a yes** before anything is written.
+- Tracks landlord contacts and user-entered deadlines per issue.
+- Answers questions about the record ("When did I first tell the landlord?", "Did Amina and I disagree about anything?") using only the facts in the record, and says "I don't have that in your record" when it isn't there.
+- Drafts a letter for the most urgent open issue. The letter stays a draft until the user confirms it was sent.
+- Builds a printable evidence packet.
+- Verifies the hash chain and names exactly which entry was altered.
+
+## How the AI is used
+
+Amazon Bedrock with Claude Haiku 4.5, in three roles:
+
+1. **Understands the message**: chat, a question about the record, or a problem report. For a report it fills a fixed form (room, category, description, dates).
+2. **Reads problem reports** into structured fields, checked against a fixed vocabulary.
+3. **Answers questions** from the record's facts, with the last few turns for context.
+
+What the model **cannot** do:
+
+- It has no write access. A report becomes a proposal, signed server-side and valid for 15 minutes. Only a spoken or clicked "yes" turns a valid proposal into ledger writes. A forged or expired confirmation writes nothing (covered by tests).
+- The service refuses empty or placeholder rooms and descriptions, so a guess never becomes a permanent entry.
+- Deadlines are always user-entered. No jurisdiction's law is hard-coded.
+
+If Bedrock fails or the daily call limit is reached, the app falls back to an offline rule-based parser, so everything still works.
 
 ## Why it is not a CRUD app
 
-The value is a deterministic reasoning layer over an append-only log:
+A deterministic reasoning layer sits over an append-only log:
 
-- Recurrence detection ("third leak in this room this quarter")
+- Recurrence detection ("third leak in this room in 90 days")
 - Response clock against a deadline the user enters
 - Escalation ladder: reminder, letter draft, evidence packet
 - Evidence completeness score
 - Conflict flags when roommates' accounts differ
-- Integrity check: recompute the hash chain and name exactly which entry was altered
+- Ranking of open issues by urgency
 
-Rules decide all of the above. The LLM (Amazon Bedrock) only parses speech into structured entries, asks clarifying questions, and drafts wording. Letters stay drafts until the user confirms they were sent.
-
-## Status
-
-<!-- STATUS:START -->
-Built and verified:
-
-- Append-only hash-chain ledger (per-household sequence, unique constraint, row lock, ORM and Postgres-trigger protection)
-- `verify_chain` names the exact altered, missing or re-linked entry
-- MCP server over Streamable HTTP at `/mcp` (protocol 2025-11-25, MCP Python SDK 1.30.x, stateless)
-- MCP tools: `log_issue`, `add_update`, `verify_integrity`
-- Members with hashed bearer tokens; every write returns the chain head (the anchor)
-- Demo tooling: `make seed`, `make tamper`, `make verify`
-- Architecture test enforcing layer boundaries and the 200-line file limit
-
-Not built yet: remaining tools, rules engine, Bedrock parsing, letters, evidence packet, share links, simulator, deploy.
-<!-- STATUS:END -->
+Rules decide all of the above.
 
 ## What is real and what is simulated
 
-Alexa+ path: **self-hosted MCP server plus a simulated Alexa+ client.** The server in this repo is real: a Streamable HTTP MCP server on spec 2025-11-25, built with the MCP Python SDK. The demo drives it through a **simulated** Alexa+ web chat client (source in this repo, labeled as simulated in the UI and in the video). No Alexa device or Alexa+ service is used.
+The server is real: a Streamable HTTP MCP server (spec 2025-11-25, MCP Python SDK) exposing 14 tools. The demo drives it through a **simulated Alexa+ web client** (source in this repo, labeled as simulated in the UI). No Alexa device or Alexa+ service is used. In an Alexa+ deployment, the MCP server is the tool layer and Alexa+ is the voice front end.
+
+MCP tools: `log_issue`, `add_update`, `record_landlord_contact`, `set_deadline`, `resolve_issue`, `correct_entry`, `whats_open`, `issue_timeline`, `record_facts`, `draft_letter`, `confirm_letter_sent`, `evidence_packet`, `ledger_view`, `verify_integrity`.
 
 ## Architecture
 
 ```
-config/        composition root: Starlette owns the lifespan; /mcp -> MCP SDK app; everything else -> Django
-mcp_server/    thin MCP adapter: identity, one service call, speech formatting
+config/          composition root: Starlette owns the lifespan; /mcp -> MCP SDK app; the rest -> Django
+mcp_server/      thin MCP adapter: identity, one service call, speech formatting
 ledger/
-  domain/      pure Python (hash chain, vocab): no Django, no MCP
-  models/      Django models, append-only
-  services/    use cases: the only place business actions happen
-engine/        (planned) pure rules: recurrence, deadlines, completeness, escalation
-api/           (planned) Django Ninja: simulator chat, share page, health
+  domain/        pure Python (hash chain, vocabulary)
+  models/        Django models, append-only
+  services/      use cases: the only place business actions happen
+engine/          pure rules: recurrence, deadlines, completeness, escalation, letters
+ai/              Bedrock parser, conversation decider, answerer; offline fallbacks; call budget
+api/             Django Ninja: /api/chat, packet, ledger view, and the simulator page
+render/          printable evidence packet
 ```
 
-Rules of the road: adapters stay thin, rules decide, the LLM only parses and drafts, files stay under 200 lines.
+Flow: browser -> `/api/chat` -> rules or Bedrock decide -> MCP server tools -> ledger.
 
 ### Tamper evidence
 
-Each entry stores a SHA-256 hash of its contents plus the previous entry's hash. Editing any entry breaks its own hash, and rewriting a hash breaks the next link. Entries cannot be updated or deleted through the app, and a Postgres trigger blocks raw SQL edits too. Corrections are new entries.
+Each entry stores a SHA-256 hash of its contents plus the previous entry's hash. Editing an entry breaks its own hash, and rewriting a hash breaks the next link. Entries cannot be updated or deleted through the app, and a Postgres trigger blocks raw SQL edits. Corrections are new entries.
 
-This is tamper-**evident**, not tamper-proof: someone with full database access could rewrite the whole chain. Anchoring the head hash outside the database is planned.
+This is tamper-**evident**, not tamper-proof: someone with full database access could rewrite the whole chain. Anchoring the head hash outside the database is on the roadmap.
 
 ## Run locally
 
@@ -69,23 +86,34 @@ cp .env.example .env
 docker compose up -d
 export DJANGO_SETTINGS_MODULE=config.settings.dev
 python manage.py migrate
-make run
+make seed     # demo household with a three-leak story; prints a demo token
+make run      # MCP server and web app on http://localhost:8000
 ```
 
-Check it:
+Open http://localhost:8000/simulator, paste the token under **Access**, and try:
+
+- `What's open?`
+- `I have a new problem`, then `the bathroom`, then `the tap won't stop dripping`, then `yes`
+- `When did I first tell the landlord?`
+- `Draft a letter`
+- `Is my record intact?`
+
+Without AWS credentials the app runs fully offline with the rule-based parser. Run the tests with `make test`.
+
+### Turn on Bedrock
 
 ```bash
-curl -s localhost:8000/health
-curl -s -X POST localhost:8000/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"log_issue","arguments":{"room":"Bedroom","category":"leak","description":"Ceiling is leaking again near the window"}}}'
+export PAPER_TRAIL_PARSER=bedrock
+export AWS_REGION=us-east-1
+# optional: BEDROCK_MODEL_ID (default: us.anthropic.claude-haiku-4-5-20251001-v1:0)
+# optional: AI_DAILY_CALL_LIMIT (default 100)
 ```
 
-Or use the MCP Inspector: `npx @modelcontextprotocol/inspector`, transport Streamable HTTP, URL `http://localhost:8000/mcp`.
-
-Run the tests: `make test`
+The AWS identity needs `bedrock:InvokeModel` on the model. Credentials come from the standard AWS chain, never from the repo.
 
 ## Safety
 
-Deadlines are always user-entered. No jurisdiction's law is hard-coded. All demo data and addresses are fake. This project does not provide legal advice.
+No jurisdiction's law is hard-coded. All demo data and addresses are fake. This project does not provide legal advice.
 
 ## License
 
