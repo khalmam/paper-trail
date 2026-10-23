@@ -22,7 +22,7 @@ details{margin-top:8px;font-size:.8rem;color:var(--mute)}pre{overflow-x:auto;max
 /*SKIN_CSS*/</style></head><body><main>
 <h1>Paper Trail</h1>
 <p class="pt-tag">Say it once. Prove it forever.</p>
-<p class="sim">Tell it what is wrong in your home. It keeps a sealed, tamper-evident record, tracks what your landlord has been told, and drafts the letter when they go quiet.</p><p class="sim">Demo with fake data. Typing stands in for speech.</p>
+<p class="sim">Tell it what is wrong in your home. It keeps a sealed, tamper-evident record, tracks what your landlord has been told, and drafts the letter when they go quiet.</p><p class="sim">Simulated Alexa+ experience. Typing stands in for speech. Demo with fake data. Every message goes through a real MCP server.</p>
 <details class="adv"><summary>Access</summary><p class="sim" id="demo-note" hidden>Demo access is filled in for you.</p><label>Access token
 <input id="tok" type="password" autocomplete="off" placeholder="paste a demo token"></label></details>
 <div class="chips" id="chips">
