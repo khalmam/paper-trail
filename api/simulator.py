@@ -119,24 +119,32 @@ function speak(t){
   speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(t));
 }
 if(SR){
-  mic.hidden=false;
-  const rec=new SR();rec.lang='en-US';rec.interimResults=false;rec.continuous=false;
-  rec.onresult=function(e){send(e.results[0][0].transcript)};
-  let tick=null,t0=0,guard=null;
-  rec.addEventListener('start',function(){
-    mic.classList.add('on');t0=Date.now();mic.textContent='Listening 0s';
-    clearTimeout(guard);guard=setTimeout(function(){try{rec.stop()}catch(_){}setTimeout(function(){try{rec.abort()}catch(_){}stopped()},800)},10000);
-    clearInterval(tick);tick=setInterval(function(){mic.textContent='Listening '+Math.floor((Date.now()-t0)/1000)+'s'},250);
-  });
-  const stopped=function(){clearInterval(tick);clearTimeout(guard);mic.classList.remove('on');mic.textContent='Mic'};
-  rec.addEventListener('end',stopped);rec.addEventListener('error',stopped);
-  rec.addEventListener('speechend',function(){try{rec.stop()}catch(_){}});
-  rec.addEventListener('result',function(){try{rec.stop()}catch(_){}setTimeout(stopped,300)});
-  mic.addEventListener('click',function(){setTimeout(function(){if(!mic.classList.contains('on'))stopped()},50)});
-  rec.onend=rec.onerror=function(){mic.classList.remove('on')};
+  let rec=null,tick=null,guard=null,t0=0,active=false;
+  const stopped=function(){active=false;clearInterval(tick);clearTimeout(guard);mic.classList.remove('on');mic.textContent='Mic'};
   mic.onclick=function(){
+    if(active){
+      try{rec.stop()}catch(_){}
+      setTimeout(function(){if(active)stopped()},1500);
+      return;
+    }
     if(window.speechSynthesis)speechSynthesis.cancel();
-    try{mic.classList.add('on');rec.start()}catch(e){mic.classList.remove('on')}
+    const mine=new SR();rec=mine;
+    mine.lang='en-US';mine.interimResults=false;mine.continuous=false;mine.maxAlternatives=1;
+    mine.onresult=function(e){
+      const t=e.results[0]&&e.results[0][0]?e.results[0][0].transcript:'';
+      if(t)send(t);
+    };
+    mine.onend=function(){if(rec===mine)stopped()};
+    mine.onerror=function(){if(rec===mine)stopped()};
+    try{
+      mine.start();active=true;t0=Date.now();
+      mic.classList.add('on');mic.textContent='Listening 0s';
+      tick=setInterval(function(){mic.textContent='Listening '+Math.floor((Date.now()-t0)/1000)+'s'},250);
+      guard=setTimeout(function(){
+        try{mine.stop()}catch(_){}
+        setTimeout(function(){if(rec===mine&&active){try{mine.abort()}catch(_){}stopped()}},1500);
+      },10000);
+    }catch(e){stopped()}
   };
 }
 fetch('/api/demo-token').then(function(r){return r.ok?r.json():null}).then(function(b){
