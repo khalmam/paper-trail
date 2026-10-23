@@ -12,7 +12,7 @@ main{max-width:720px;margin:0 auto;padding:20px 16px 32px}h1{font-size:1.4rem;ma
 label{display:block;font-size:.85rem;color:var(--mute);margin-bottom:10px}
 input{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit}
 #log{min-height:240px;display:flex;flex-direction:column;gap:10px;margin:12px 0}
-.m{max-width:88%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+.m{scroll-margin-bottom:120px;max-width:88%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
 .m p{margin:0;white-space:pre-wrap}.me{align-self:flex-end;background:var(--me)}
 details{margin-top:8px;font-size:.8rem;color:var(--mute)}pre{overflow-x:auto;max-height:260px;font-size:.75rem}
 #f{display:flex;gap:8px}button{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:inherit;cursor:pointer}
@@ -77,7 +77,7 @@ async function send(text){
       if(extra){extra.appendChild(box)}else{extra=box}
     }
     add('bot',b.speech||'Done.',extra);speak(b.speech||'Done.');if(b.tool==='evidence_packet')showPacket();if(b.tool==='draft_letter'&&b.data)showLetter(b.data);
-  }catch(e){add('bot','Could not reach the server.')}finally{wait.remove()}
+  }catch(e){add('bot','Could not reach the server.')}finally{wait.remove();if(log.lastElementChild)log.lastElementChild.scrollIntoView({block:'end'})}
 }
 function showLetter(l){
   const pre=document.createElement('pre');pre.style.whiteSpace='pre-wrap';
